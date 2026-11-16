@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0b10">
+  <title>Lumen · AI Image Studio</title>
+  <meta name="description" content="Migliora e ingrandisci le tue immagini con Real-ESRGAN. Elaborazione locale, export in PNG, JPEG, WebP, TIFF e PDF.">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="glow glow-a" aria-hidden="true"></div>
+  <div class="glow glow-b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2.5l1.9 5.4a4 4 0 0 0 2.2 2.2l5.4 1.9-5.4 1.9a4 4 0 0 0-2.2 2.2L12 21.5l-1.9-5.4a4 4 0 0 0-2.2-2.2L2.5 12l5.4-1.9a4 4 0 0 0 2.2-2.2L12 2.5z" fill="currentColor"/>
+        </svg>
+      </span>
+      <span class="brand-text">Lumen <small>Studio</small></span>
+    </div>
+    <div class="top-actions">
+      <span class="chip live" id="deviceChip" title="Dispositivo di elaborazione">
+        <span class="pulse"></span><span id="deviceLabel">GPU</span>
+      </span>
+      <span class="chip dim">100% locale</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <!-- ---------------------------------------------------------- hero -->
+    <section class="hero" id="hero">
+      <p class="eyebrow"><span class="eyebrow-dot"></span> AI super-resolution</p>
+      <h1>Dai nuova vita<br><em>alle tue immagini.</em></h1>
+      <p class="lede">
+        Trascina una foto: il modello ricostruisce dettagli, texture e contorni.
+        Confronta il risultato ed esportalo nel formato che preferisci.
+      </p>
+
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Carica un'immagine">
+        <div class="drop-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/>
+            <path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"/>
+          </svg>
+        </div>
+        <p class="drop-title">Trascina qui un'immagine</p>
+        <p class="drop-sub">oppure <span class="link">scegli un file</span> dal computer</p>
+        <p class="drop-formats" id="dropFormats">PNG · JPEG · WebP · TIFF · BMP · GIF</p>
+        <input id="fileInput" type="file" accept="image/*" hidden>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+              <circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>
+            </svg>
+          </span>
+          <div><strong>Dettaglio reale</strong><p>Real-ESRGAN 4× ricostruisce texture e micro-contrasto.</p></div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 17V7h16v10z"/><path d="M12 7v10M8 12H4m16 0h-4"/>
+            </svg>
+          </span>
+          <div><strong>Confronto immediato</strong><p>Slider prima/dopo per valutare ogni dettaglio.</p></div>
+        </div>
+        <div class="feature">
+          <span class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 4v11m0 0l-4-4m4 4l4-4"/><path d="M5 19h14"/>
+            </svg>
+          </span>
+          <div><strong>Export flessibile</strong><p>PNG, JPEG, WebP, TIFF e PDF pronti da scaricare.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------- workspace -->
+    <section class="workspace hidden" id="workspace" aria-live="polite">
+      <aside class="panel controls">
+        <div class="panel-head">
+          <h2>Impostazioni</h2>
+          <button class="ghost small" id="resetBtn" type="button">Nuova immagine</button>
+        </div>
+
+        <div class="filecard">
+          <div class="filecard-thumb" id="fileThumb" aria-hidden="true"></div>
+          <div class="filecard-meta">
+            <strong id="fileName">—</strong>
+            <span id="fileMeta">—</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span>Modello</span><span class="hint" id="modelHint">Massimo dettaglio</span></div>
+          <div class="segmented" id="modelGroup" role="radiogroup" aria-label="Modello AI">
+            <button type="button" data-model="x4" class="active" role="radio" aria-checked="true">Qualità <small>4×</small></button>
+            <button type="button" data-model="x2" role="radio" aria-checked="false">Naturale <small>2×</small></button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span>Carattere</span><span class="hint">preset rapidi</span></div>
+          <div class="chips" id="presetChips">
+            <button type="button" data-preset="balanced" class="chip-btn active">Bilanciato</button>
+            <button type="button" data-preset="natural" class="chip-btn">Naturale</button>
+            <button type="button" data-preset="detail" class="chip-btn">Dettaglio</button>
+            <button type="button" data-preset="clean" class="chip-btn">Pulito</button>
+          </div>
+        </div>
+
+        <div class="slide">
+          <div class="slide-row"><label for="strength">Intensità AI</label><output id="strengthOut" for="strength">100%</output></div>
+          <input type="range" id="strength" min="0" max="100" step="5" value="100">
+          <p class="slide-help">Meno intensità = più aderente all'originale.</p>
+        </div>
+
+        <div class="slide">
+          <div class="slide-row"><label for="sharpen">Nitidezza</label><output id="sharpenOut" for="sharpen">0.40</output></div>
+          <input type="range" id="sharpen" min="0" max="1.5" step="0.05" value="0.4">
+        </div>
+
+        <div class="slide">
+          <div class="slide-row"><label for="denoise">Riduzione rumore</label><output id="denoiseOut" for="denoise">0.00</output></div>
+          <input type="range" id="denoise" min="0" max="2" step="0.1" value="0">
+        </div>
+
+        <button class="btn primary block" id="enhanceBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3l1.7 4.8a3.6 3.6 0 0 0 2.2 2.2L20.7 12l-4.8 1.7a3.6 3.6 0 0 0-2.2 2.2L12 20.7l-1.7-4.8a3.6 3.6 0 0 0-2.2-2.2L3.3 12l4.8-1.7a3.6 3.6 0 0 0 2.2-2.2L12 3z"/>
+          </svg>
+          <span id="enhanceLabel">Migliora immagine</span>
+        </button>
+        <p class="status" id="statusText" role="status">Pronto quando vuoi.</p>
+      </aside>
+
+      <div class="panel stagepanel">
+        <div class="stage-head">
+          <div>
+            <h2 id="stageTitle">Anteprima</h2>
+            <p class="stage-sub" id="stageSub">Carica un'immagine per iniziare</p>
+          </div>
+          <span class="badge hidden" id="resultBadge">4×</span>
+        </div>
+
+        <div class="stage" id="stage">
+          <div class="stage-idle" id="stageIdle">
+            <span class="stage-idle-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/>
+              </svg>
+            </span>
+            <p>La tua immagine apparirà qui</p>
+          </div>
+
+          <img class="source-preview hidden" id="sourcePreview" alt="Anteprima dell'immagine caricata">
+
+          <div class="compare hidden" id="compare">
+            <img class="compare-img" id="afterImg" alt="Immagine migliorata">
+            <div class="compare-before" id="beforeWrap">
+              <img class="compare-img" id="beforeImg" alt="Immagine originale">
+            </div>
+            <div class="compare-line" id="compareLine"><span class="compare-knob" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/>
+              </svg>
+            </span></div>
+            <span class="compare-tag left">Originale</span>
+            <span class="compare-tag right">Enhanced</span>
+            <input type="range" class="compare-range" id="compareRange" min="0" max="100" value="50" aria-label="Confronto prima e dopo">
+          </div>
+
+          <div class="processing hidden" id="processing">
+            <div class="progress-orb" id="progressOrb"><span id="progressNum">0%</span></div>
+            <p class="progress-stage" id="progressStage">Preparazione…</p>
+            <p class="progress-note">Elaborazione locale · nessuna immagine lascia il tuo computer</p>
+          </div>
+        </div>
+
+        <div class="stage-foot">
+          <span id="stageHint">Trascina il cursore per confrontare.</span>
+          <span id="stageMeta"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------- export -->
+    <section class="panel export hidden" id="exportPanel">
+      <div class="export-head">
+        <div>
+          <p class="eyebrow small"><span class="eyebrow-dot"></span> Ultimo passo</p>
+          <h2>Esporta il risultato</h2>
+        </div>
+        <p class="export-note">Scegli formato e qualità. Il PDF mantiene proporzioni e risoluzione originali, senza bordi. Il pulsante Scarica apre la finestra di salvataggio del sistema, dove puoi scegliere la cartella.</p>
+      </div>
+
+      <div class="formats" id="formatGroup" role="radiogroup" aria-label="Formato di esportazione">
+        <button type="button" class="format active" data-format="png" role="radio" aria-checked="true">
+          <strong>PNG</strong><span>senza perdita</span>
+        </button>
+        <button type="button" class="format" data-format="jpeg" role="radio" aria-checked="false">
+          <strong>JPEG</strong><span>leggero</span>
+        </button>
+        <button type="button" class="format" data-format="webp" role="radio" aria-checked="false">
+          <strong>WebP</strong><span>moderno</span>
+        </button>
+        <button type="button" class="format" data-format="tiff" role="radio" aria-checked="false">
+          <strong>TIFF</strong><span>stampa</span>
+        </button>
+        <button type="button" class="format" data-format="pdf" role="radio" aria-checked="false">
+          <strong>PDF</strong><span>una pagina</span>
+        </button>
+      </div>
+
+      <div class="export-bottom">
+        <div class="quality-block" id="qualityBlock">
+          <div class="slide-row"><label for="quality">Qualità</label><output id="qualityOut" for="quality">95</output></div>
+          <input type="range" id="quality" min="60" max="100" step="1" value="95">
+        </div>
+        <a class="btn primary download" id="downloadBtn" href="#" download title="Apre la finestra di salvataggio del sistema">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M5 19h14"/>
+          </svg>
+          <span id="downloadLabel">Scarica</span> <span id="downloadExt">.png</span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Lumen Studio</span>
+    <span class="footer-spacer"></span>
+    <span id="footerDevice">Elaborazione locale</span>
+  </footer>
+
+  <div class="toast" id="toast" role="alert"></div>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
